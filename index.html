@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciador de Horas</title>
+    <style>
+        :root { --primary: #2563eb; --bg: #f8fafc; --text: #1e293b; }
+        * { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 10px; display: flex; justify-content: center; }
+        
+        .container { background: white; padding: 1rem; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; max-width: 500px; }
+        h2 { text-align: center; color: var(--primary); margin: 0 0 15px 0; font-size: 1.2rem; }
+
+        .form-group { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px; }
+        .form-item { flex: 1 1 80px; display: flex; flex-direction: column; }
+        label { font-size: 0.65rem; font-weight: bold; margin-bottom: 3px; color: #64748b; }
+        input { width: 100%; padding: 6px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 0.85rem; outline: none; }
+        .btn-add { background: var(--primary); color: white; border: none; padding: 10px; border-radius: 4px; cursor: pointer; font-weight: bold; flex: 1 1 100%; }
+
+        /* Tabela Ajustada */
+        table { width: 100%; border-collapse: collapse; font-size: 0.8rem; table-layout: fixed; }
+        th, td { text-align: left; padding: 10px 2px; border-bottom: 1px solid #e2e8f0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        
+        /* Distribuição de colunas para caber os nomes completos */
+        th:nth-child(1), td:nth-child(1) { width: 22%; } /* Data */
+        th:nth-child(2), td:nth-child(2) { width: 22%; } /* Entrada */
+        th:nth-child(3), td:nth-child(3) { width: 22%; } /* Saída */
+        th:nth-child(4), td:nth-child(4) { width: 20%; } /* Total */
+        th:nth-child(5), td:nth-child(5) { width: 14%; text-align: center; } /* X */
+
+        .editable { color: var(--primary); font-weight: 600; text-decoration: underline dotted; cursor: pointer; }
+        .total-box { margin: 10px 0; padding: 12px; background: #eff6ff; border-radius: 8px; text-align: center; font-size: 1.1rem; border: 1px solid #dbeafe; }
+        .total-box strong { color: var(--primary); }
+        
+        .btn-del { background: #fee2e2; color: #ef4444; border: none; padding: 4px 8px; border-radius: 4px; font-size: 0.7rem; cursor: pointer; }
+        .btn-clear { background: none; color: #94a3b8; border: 1px solid #e2e8f0; margin-top: 15px; padding: 6px; width: 100%; border-radius: 4px; font-size: 0.7rem; cursor: pointer; }
+        .hint { font-size: 0.65rem; color: #94a3b8; text-align: center; margin-top: 8px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>⏱️ Controle de Ponto</h2>
+    
+    <div class="form-group">
+        <div class="form-item"><label>Data</label><input type="date" id="data"></div>
+        <div class="form-item"><label>Entrada</label><input type="time" id="entrada"></div>
+        <div class="form-item"><label>Saída</label><input type="time" id="saida"></div>
+        <button class="btn-add" onclick="adicionarRegistro()">Registrar Horas</button>
+    </div>
+
+    <div class="total-box">Total: <strong id="totalHoras">0.00</strong> h</div>
+
+    <table id="tabelaHoras">
+        <thead>
+            <tr>
+                <th>Data</th>
+                <th>Entrada</th>
+                <th>Saída</th>
+                <th>Total</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <p class="hint">Toque nos horários para editar.</p>
+    <button class="btn-clear" onclick="limparDados()">Apagar Tudo</button>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('data').value = new Date().toISOString().split('T')[0];
+        atualizarInterface();
+    });
+
+    function adicionarRegistro() {
+        const d = document.getElementById('data').value, 
+              e = document.getElementById('entrada').value, 
+              s = document.getElementById('saida').value;
+              
+        if (!d || !e || !s) return;
+        
+        const hE = new Date(`${d}T${e}`), hS = new Date(`${d}T${s}`);
+        const hrs = hS > hE ? ((hS - hE) / 3600000).toFixed(2) : 0;
+        
+        const hist = JSON.parse(localStorage.getItem('horas_tracker') || '[]');
+        hist.push({ data: d, entrada: e, saida: s, horas: hrs });
+        localStorage.setItem('horas_tracker', JSON.stringify(hist));
+        atualizarInterface();
+    }
+
+    function atualizarInterface() {
+        const tbody = document.querySelector('#tabelaHoras tbody'), 
+              totalDisp = document.getElementById('totalHoras');
+        const hist = JSON.parse(localStorage.getItem('horas_tracker') || '[]');
+        
+        tbody.innerHTML = ''; 
+        let soma = 0;
+        
+        hist.forEach((reg, i) => {
+            const row = tbody.insertRow();
+            row.innerHTML = `
+                <td>${reg.data.split('-').reverse().join('/').substring(0,5)}</td>
+                <td class="editable" onclick="editarCampo(${i},'entrada')">${reg.entrada}</td>
+                <td class="editable" onclick="editarCampo(${i},'saida')">${reg.saida}</td>
+                <td><strong>${reg.horas}h</strong></td>
+                <td style="text-align:center"><button class="btn-del" onclick="removerItem(${i})">✕</button></td>
+            `;
+            soma += parseFloat(reg.horas);
+        });
+        totalDisp.innerText = soma.toFixed(2);
+    }
+
+    function editarCampo(i, campo) {
+        const n = prompt(`Novo horário de ${campo === 'entrada' ? 'Entrada' : 'Saída'} (HH:MM):`);
+        if (!n || !/^([01]\d|2[0-3]):?([0-5]\d)$/.test(n)) return;
+        
+        const hist = JSON.parse(localStorage.getItem('horas_tracker') || '[]');
+        hist[i][campo] = n;
+        
+        const r = hist[i], hE = new Date(`${r.data}T${r.entrada}`), hS = new Date(`${r.data}T${r.saida}`);
+        hist[i].horas = hS > hE ? ((hS - hE) / 3600000).toFixed(2) : 0;
+        
+        localStorage.setItem('horas_tracker', JSON.stringify(hist));
+        atualizarInterface();
+    }
+
+    function removerItem(i) {
+        if(confirm("Remover este registro?")) {
+            const hist = JSON.parse(localStorage.getItem('horas_tracker') || '[]');
+            hist.splice(i, 1);
+            localStorage.setItem('horas_tracker', JSON.stringify(hist));
+            atualizarInterface();
+        }
+    }
+
+    function limparDados() { 
+        if(confirm("Deseja apagar todo o histórico?")) { 
+            localStorage.removeItem('horas_tracker'); 
+            atualizarInterface(); 
+        } 
+    }
+</script>
+
+</body>
+</html>
