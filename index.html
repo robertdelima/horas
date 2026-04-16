@@ -18,14 +18,16 @@
         input { width: 100%; padding: 6px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 0.85rem; outline: none; }
         .btn-add { background: var(--primary); color: white; border: none; padding: 10px; border-radius: 4px; cursor: pointer; font-weight: bold; flex: 1 1 100%; }
 
+        /* Tabela com alinhamento centralizado */
         table { width: 100%; border-collapse: collapse; font-size: 0.8rem; table-layout: fixed; }
-        th, td { text-align: left; padding: 10px 2px; border-bottom: 1px solid #e2e8f0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        th, td { padding: 10px 2px; border-bottom: 1px solid #e2e8f0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; }
         
-        th:nth-child(1), td:nth-child(1) { width: 22%; } 
-        th:nth-child(2), td:nth-child(2) { width: 22%; } 
-        th:nth-child(3), td:nth-child(3) { width: 22%; } 
-        th:nth-child(4), td:nth-child(4) { width: 20%; } 
-        th:nth-child(5), td:nth-child(5) { width: 14%; text-align: center; } 
+        /* Ajuste de larguras */
+        th:nth-child(1), td:nth-child(1) { width: 24%; } /* Data */
+        th:nth-child(2), td:nth-child(2) { width: 22%; } /* Entrada */
+        th:nth-child(3), td:nth-child(3) { width: 22%; } /* Saída */
+        th:nth-child(4), td:nth-child(4) { width: 18%; } /* Total */
+        th:nth-child(5), td:nth-child(5) { width: 14%; } /* X */
 
         .editable { color: var(--primary); font-weight: 600; text-decoration: underline dotted; cursor: pointer; }
         .total-box { margin: 10px 0; padding: 12px; background: #eff6ff; border-radius: 8px; text-align: center; font-size: 1.1rem; border: 1px solid #dbeafe; }
@@ -104,7 +106,7 @@
                 <td class="editable" onclick="editarCampo(${i},'entrada')">${reg.entrada}</td>
                 <td class="editable" onclick="editarCampo(${i},'saida')">${reg.saida}</td>
                 <td><strong>${reg.horas}h</strong></td>
-                <td style="text-align:center"><button class="btn-del" onclick="removerItem(${i})">✕</button></td>
+                <td><button class="btn-del" onclick="removerItem(${i})">✕</button></td>
             `;
             soma += parseFloat(reg.horas);
         });
@@ -117,14 +119,10 @@
         
         if (novaData && /^\d{4}-\d{2}-\d{2}$/.test(novaData)) {
             hist[i].data = novaData;
-            // Recalcula as horas para o caso de mudança de fuso ou erro
             const r = hist[i], hE = new Date(`${r.data}T${r.entrada}`), hS = new Date(`${r.data}T${r.saida}`);
             hist[i].horas = hS > hE ? ((hS - hE) / 3600000).toFixed(2) : 0;
-            
             localStorage.setItem('horas_tracker', JSON.stringify(hist));
             atualizarInterface();
-        } else if (novaData !== null) {
-            alert("Formato inválido! Use AAAA-MM-DD");
         }
     }
 
