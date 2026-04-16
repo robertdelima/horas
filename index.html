@@ -84,7 +84,7 @@
         const hrs = hS > hE ? ((hS - hE) / 3600000).toFixed(2) : 0;
         
         const hist = JSON.parse(localStorage.getItem('horas_tracker') || '[]');
-        hist.push({ data: d, entrada: e, saida: s, horas: hrs });
+        hist.push({ data: d, entrada: e, sauda: s, horas: hrs });
         localStorage.setItem('horas_tracker', JSON.stringify(hist));
         atualizarInterface();
     }
@@ -102,7 +102,7 @@
             row.innerHTML = `
                 <td class="editable" onclick="editarData(${i})">${reg.data.split('-').reverse().join('/')}</td>
                 <td class="editable" onclick="editarCampo(${i},'entrada')">${reg.entrada}</td>
-                <td class="editable" onclick="editarCampo(${i},'saida')">${reg.saida}</td>
+                <td class="editable" onclick="editarCampo(${i},'sauda')">${reg.sauda || reg.saida}</td>
                 <td><strong>${reg.horas}h</strong></td>
                 <td><button class="btn-del" onclick="removerItem(${i})">✕</button></td>
             `;
@@ -117,25 +117,27 @@
         
         if (novaData && /^\d{4}-\d{2}-\d{2}$/.test(novaData)) {
             hist[i].data = novaData;
-            recalcularE Salvar(hist, i);
+            recalcularESalvar(hist, i);
         }
     }
 
     function editarCampo(i, campo) {
         const hist = JSON.parse(localStorage.getItem('horas_tracker') || '[]');
-        // Agora o prompt já traz o valor atual como padrão (hist[i][campo])
-        const n = prompt(`Editar horário de ${campo === 'entrada' ? 'Entrada' : 'Saída'} (HH:MM):`, hist[i][campo]);
+        const valorAtual = campo === 'sauda' ? (hist[i].sauda || hist[i].saida) : hist[i][campo];
+        const n = prompt(`Editar horário de ${campo === 'entrada' ? 'Entrada' : 'Saída'} (HH:MM):`, valorAtual);
         
         if (n && /^([01]\d|2[0-3]):?([0-5]\d)$/.test(n)) {
             hist[i][campo] = n;
-            recalcularE Salvar(hist, i);
+            recalcularESalvar(hist, i);
         }
     }
 
     function recalcularESalvar(hist, i) {
         const r = hist[i];
-        const hE = new Date(`${r.data}T${r.entrada}`);
-        const hS = new Date(`${r.data}T${r.saida}`);
+        const entrada = r.entrada;
+        const sauda = r.sauda || r.saida;
+        const hE = new Date(`${r.data}T${entrada}`);
+        const hS = new Date(`${r.data}T${sauda}`);
         hist[i].horas = hS > hE ? ((hS - hE) / 3600000).toFixed(2) : 0;
         
         localStorage.setItem('horas_tracker', JSON.stringify(hist));
