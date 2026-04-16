@@ -18,16 +18,14 @@
         input { width: 100%; padding: 6px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 0.85rem; outline: none; }
         .btn-add { background: var(--primary); color: white; border: none; padding: 10px; border-radius: 4px; cursor: pointer; font-weight: bold; flex: 1 1 100%; }
 
-        /* Tabela Ajustada */
         table { width: 100%; border-collapse: collapse; font-size: 0.8rem; table-layout: fixed; }
         th, td { text-align: left; padding: 10px 2px; border-bottom: 1px solid #e2e8f0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         
-        /* Distribuição de colunas para caber os nomes completos */
-        th:nth-child(1), td:nth-child(1) { width: 22%; } /* Data */
-        th:nth-child(2), td:nth-child(2) { width: 22%; } /* Entrada */
-        th:nth-child(3), td:nth-child(3) { width: 22%; } /* Saída */
-        th:nth-child(4), td:nth-child(4) { width: 20%; } /* Total */
-        th:nth-child(5), td:nth-child(5) { width: 14%; text-align: center; } /* X */
+        th:nth-child(1), td:nth-child(1) { width: 22%; } 
+        th:nth-child(2), td:nth-child(2) { width: 22%; } 
+        th:nth-child(3), td:nth-child(3) { width: 22%; } 
+        th:nth-child(4), td:nth-child(4) { width: 20%; } 
+        th:nth-child(5), td:nth-child(5) { width: 14%; text-align: center; } 
 
         .editable { color: var(--primary); font-weight: 600; text-decoration: underline dotted; cursor: pointer; }
         .total-box { margin: 10px 0; padding: 12px; background: #eff6ff; border-radius: 8px; text-align: center; font-size: 1.1rem; border: 1px solid #dbeafe; }
@@ -65,7 +63,7 @@
         <tbody></tbody>
     </table>
 
-    <p class="hint">Toque nos horários para editar.</p>
+    <p class="hint">Toque na data ou horários para editar.</p>
     <button class="btn-clear" onclick="limparDados()">Apagar Tudo</button>
 </div>
 
@@ -102,7 +100,7 @@
         hist.forEach((reg, i) => {
             const row = tbody.insertRow();
             row.innerHTML = `
-                <td>${reg.data.split('-').reverse().join('/').substring(0,5)}</td>
+                <td class="editable" onclick="editarData(${i})">${reg.data.split('-').reverse().join('/')}</td>
                 <td class="editable" onclick="editarCampo(${i},'entrada')">${reg.entrada}</td>
                 <td class="editable" onclick="editarCampo(${i},'saida')">${reg.saida}</td>
                 <td><strong>${reg.horas}h</strong></td>
@@ -111,6 +109,23 @@
             soma += parseFloat(reg.horas);
         });
         totalDisp.innerText = soma.toFixed(2);
+    }
+
+    function editarData(i) {
+        const hist = JSON.parse(localStorage.getItem('horas_tracker') || '[]');
+        const novaData = prompt("Nova data (AAAA-MM-DD):", hist[i].data);
+        
+        if (novaData && /^\d{4}-\d{2}-\d{2}$/.test(novaData)) {
+            hist[i].data = novaData;
+            // Recalcula as horas para o caso de mudança de fuso ou erro
+            const r = hist[i], hE = new Date(`${r.data}T${r.entrada}`), hS = new Date(`${r.data}T${r.saida}`);
+            hist[i].horas = hS > hE ? ((hS - hE) / 3600000).toFixed(2) : 0;
+            
+            localStorage.setItem('horas_tracker', JSON.stringify(hist));
+            atualizarInterface();
+        } else if (novaData !== null) {
+            alert("Formato inválido! Use AAAA-MM-DD");
+        }
     }
 
     function editarCampo(i, campo) {
